@@ -1,0 +1,52 @@
+[
+  {
+    "categorie": "Comptes courants",
+    "question": "Quels documents pour ouvrir un compte ?",
+    "reponse": "Pour ouvrir un compte courant chez CCA Bank:\n il faut fournir une CNI ou passeport valide,\n deux photos 4x4,\n un justificatif de domicile et effectuer un dépôt initial."
+  },
+  {
+    "categorie": "Comptes epargne",
+    "question": "Quels documents pour ouvrir un compte epargne ?",
+    "reponse": ""
+  },
+  {
+    "categorie": "Comptes entreprises",
+    "question": "Quels documents pour ouvrir un compte entreprise ?",
+    "reponse": ""
+  },
+  {
+    "categorie": "Crédits",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "Cartes bancaires",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "C-Mobile & C-Online",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "Agences & GAB",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "Tarification",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "Transferts d'argent",
+    "question": "",
+    "reponse": ""
+  },
+  {
+    "categorie": "Réclamations",
+    "question": "",
+    "reponse": ""
+  }
+]
