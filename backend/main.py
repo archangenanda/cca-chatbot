@@ -1,10 +1,15 @@
+from flask import app
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from tools import chercher_faq
+from plaintes import router as plaintes_router
 import os
 
+
+app.include_router(plaintes_router, prefix="/plaintes")
 # ── Chargement des variables d'environnement ──────────────────
 load_dotenv()
 

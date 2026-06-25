@@ -337,3 +337,248 @@ body {
 .security-text .material-symbols-rounded {
   font-size: 0.9rem;
 }
+
+/* ══════════════════════════════════════
+   LOGIN PAGE
+══════════════════════════════════════ */
+.login-container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #d699d1;
+}
+
+.login-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  width: 400px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
+.login-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 14px;
+  background: #541454;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.login-logo .logo-cca {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.login-logo .logo-bank {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.login-box h2 {
+  font-size: 1.4rem;
+  color: #541454;
+  margin-bottom: 8px;
+}
+
+.login-box p {
+  color: #999;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.login-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-box input {
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.login-box input:focus {
+  border-color: #541454;
+}
+
+.login-box button {
+  padding: 13px;
+  background: #541454;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-box button:hover {
+  background: #7a0f86;
+}
+
+.erreur {
+  color: #e53935;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ══════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════ */
+.dashboard {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.dashboard-header {
+  background: #541454;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-header h1 {
+  color: #fff;
+  font-size: 1.3rem;
+  flex: 1;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 20px 32px 0;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.dashboard-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #999;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+}
+
+.dashboard-tabs button.active {
+  color: #541454;
+  border-bottom-color: #541454;
+  font-weight: 600;
+}
+
+.dashboard-content {
+  padding: 24px 32px;
+}
+
+.dashboard-content h2 {
+  color: #541454;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+/* FAQ */
+.faq-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.faq-categorie {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #d699d1;
+  color: #541454;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.faq-question {
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.faq-reponse {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Tickets */
+.ticket-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.ticket-statut {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ticket-statut.ouvert {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.ticket-statut.resolu {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ticket-item small {
+  display: block;
+  color: #999;
+  font-size: 0.78rem;
+  margin-top: 6px;
+}

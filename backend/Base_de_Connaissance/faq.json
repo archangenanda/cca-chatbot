@@ -2,12 +2,19 @@
   {
     "categorie": "Comptes courants",
     "question": "Quels documents pour ouvrir un compte ?",
-    "reponse": "Pour ouvrir un compte courant chez CCA Bank:\n il faut fournir une CNI ou passeport valide,\n deux photos 4x4,\n un justificatif de domicile et effectuer un dépôt initial."
-  },
+    "reponse": [
+        "Pour ouvrir un compte courant chez CCA Bank:",
+        "\n - NUI \n ",
+        "- Photocopie de la CNI ou passeport valide.\n - Une carte de sejour pour les etrangers.",
+        " \n - Deux cartes photos 4x4.\n - PLan de localisation et une copie de la facture de paiement d'electricite ou d'eau.",
+        " \n - Un justificatif de domicile. \n - Un dépôt initial 25000 FCFA sans domiciliation salaire, gratuit avec domiciliation salaire et entrepreneur, artisants,eleveurs, TPE etc .. 50000FCFA.",
+        "\n \n \n  Il existe aussi des services rattaches au compte epargne tels que: \n - C-Online: service de banque en ligne. \n - C-Mobile: service de banque mobile. \n - Carte bancaire: carte de retrait et de paiement."
+    ]
+    },
   {
     "categorie": "Comptes epargne",
     "question": "Quels documents pour ouvrir un compte epargne ?",
-    "reponse": ""
+    "reponse": "Pour ouvrir un compte épargne chez CCA Bank: \n - NUI \n - Photocopie de la CNI ou passeport valide.\n - Une carte de sejour pour les etrangers. \n - Deux cartes photos 4x4.\n - PLan de localisation et une copie de la facture de paiement d'electricite ou d'eau. \n - Un justificatif de domicile. \n - Un dépôt initial 25000 FCFA."
   },
   {
     "categorie": "Comptes entreprises",
