@@ -1,7 +1,7 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Date, Time
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from sqlalchemy.orm import sessionmaker, relationship
+from datetime import datetime, date, time
 from dotenv import load_dotenv
 import os
 
@@ -35,27 +35,49 @@ class QuestionNR(Base):
     question = Column(Text)
     date     = Column(DateTime, default=datetime.now)
 
+# ── Table Client ──────────────────────────────────────────────
+class Client(Base):
+    __tablename__ = "clients"
+    id               = Column(Integer, primary_key=True)
+    nom              = Column(String(100), nullable=False)
+    prenom           = Column(String(100), nullable=False)
+    telephone        = Column(String(20), nullable=False)
+    date_connexion   = Column(Date, default=date.today)
+    heure_connexion  = Column(Time, default=lambda: datetime.now().time())
+
+    # Relations
+    tickets  = relationship("Ticket", back_populates="client_ref")
+    plaintes = relationship("Plainte", back_populates="client_ref")
+
 class Ticket(Base):
     __tablename__ = "tickets"
-    id      = Column(Integer, primary_key=True)
-    client  = Column(String, default="Client Web")
-    message = Column(Text)
-    statut  = Column(String, default="ouvert")
-    date    = Column(DateTime, default=datetime.now)
+    id         = Column(Integer, primary_key=True)
+    client_id  = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    client     = Column(String, default="Client Web")  # gardé pour compatibilité
+    message    = Column(Text)
+    statut     = Column(String, default="ouvert")
+    date       = Column(DateTime, default=datetime.now)
+
+    # Relation
+    client_ref = relationship("Client", back_populates="tickets")
 
 class Plainte(Base):
     __tablename__ = "plaintes"
     id               = Column(Integer, primary_key=True)
+    client_id        = Column(Integer, ForeignKey("clients.id"), nullable=True)
     session_id       = Column(String(255))
     nom_client       = Column(String(255))
-    email_client     = Column(String(255))
+    prenom_client    = Column(String(255))
     telephone_client = Column(String(50))
     categorie        = Column(String(100))
     message          = Column(Text, nullable=False)
-    statut           = Column(String(50), default="nouveau")  # nouveau | en_cours | resolu | ferme
+    statut           = Column(String(50), default="nouveau")
     reponse_admin    = Column(Text)
     date_soumission  = Column(DateTime, default=datetime.now)
     date_mise_a_jour = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # Relation
+    client_ref = relationship("Client", back_populates="plaintes")
 
 # ── Création des tables ───────────────────────────────────────
 def init_db():

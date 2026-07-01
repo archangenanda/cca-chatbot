@@ -1,48 +1,58 @@
-import json
-import os
+import unicodedata
 from langchain.tools import tool
+from database import SessionLocal, FAQ
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FAQ_PATH = os.path.join(BASE_DIR, "Base_de_Connaissance", "faq.json")
+def normaliser(texte: str) -> str:
+    """Supprime les accents et met en minuscules pour une comparaison uniforme"""
+    texte = texte.lower()
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', texte)
+        if unicodedata.category(c) != 'Mn'  # Mn = caractères accentués
+    )
 
 @tool
 def chercher_faq(question: str) -> str:
     """Cherche une réponse dans la FAQ de CCA Bank"""
     
-    with open(FAQ_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    # ── Connexion à la base de données ──────────────────────────
+    db = SessionLocal()
+    # Récupère uniquement les FAQs qui ont une réponse non vide
+    data = db.query(FAQ).filter(FAQ.reponse != None, FAQ.reponse != "").all()
+    db.close()
     
-    question_lower = question.lower()
+    # ── Normalisation de la question ─────────────────────────────
+    question_normalisee = normaliser(question)
     
-    # Mots clés à ignorer
-    mots_vides = ["pour", "quels", "comment", "est", "les", "des", "une", "un", "que", "qui", "quoi"]
+    # Mots courants à ignorer (n'apportent pas de sens)
+    mots_vides = ["pour", "quels", "comment", "est", "les", "des", "une", "un", 
+                  "que", "qui", "quoi", "sont", "ou"]
     
-    # Extraire les mots importants de la question
+    # Garde uniquement les mots significatifs (longueur > 2, pas dans mots_vides)
     mots_question = [
-        mot for mot in question_lower.split() 
+        mot for mot in question_normalisee.split() 
         if mot not in mots_vides and len(mot) > 2
     ]
     
     print("Mots importants :", mots_question)
     
+    # ── Recherche par score de correspondance ────────────────────
     meilleur_score = 0
     meilleure_reponse = None
     
     for item in data:
-        if not item["reponse"]:
-            continue
-            
-        # Texte à comparer
-        texte = f"{item['categorie']} {item['question']}".lower()
+        # Normalise la catégorie + question de la FAQ pour comparaison sans accents
+        texte = normaliser(f"{item.categorie} {item.question}")
         
-        # Compter combien de mots correspondent
+        # Compte combien de mots de la question correspondent au texte de la FAQ
         score = sum(1 for mot in mots_question if mot in texte)
-        print(f"Score {item['categorie']}: {score}")
+        print(f"Score {item.categorie}: {score}")
         
+        # Garde la meilleure correspondance
         if score > meilleur_score:
             meilleur_score = score
-            meilleure_reponse = item["reponse"]
+            meilleure_reponse = item.reponse
     
+    # ── Retourne la réponse ou un message par défaut ─────────────
     if meilleure_reponse:
         return meilleure_reponse
         

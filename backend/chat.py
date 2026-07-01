@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
-from database import SessionLocal, QuestionNR, Ticket, Plainte
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
+from database import SessionLocal, QuestionNR, Ticket, Plainte, Client
 from tools import chercher_faq
+from datetime import datetime, date
 import os
 
 router = APIRouter()
@@ -20,30 +21,83 @@ model = ChatOpenAI(
 tools = [chercher_faq]
 model_with_tools = model.bind_tools(tools)
 
-# ── Modèle de données ─────────────────────────────────────────
+# ── Modèles de données ────────────────────────────────────────
+class MessageHistorique(BaseModel):
+    role: str
+    content: str
+
+class ClientInfo(BaseModel):
+    nom: str
+    prenom: str
+    telephone: str
+
 class MessageRequest(BaseModel):
     message: str
+    historique: list[MessageHistorique] = []
+    client: ClientInfo | None = None  # infos du client envoyées depuis le frontend
 
 # ── Endpoint chatbot ──────────────────────────────────────────
 @router.post("/")
 def chat(request: MessageRequest):
+
+    # ── Enregistrement du client en base ──────────────────────
+    client_id = None
+    nom_client = "Client Web"
+    prenom_client = ""
+    telephone_client = ""
+
+    if request.client:
+        db = SessionLocal()
+        nouveau_client = Client(
+            nom=request.client.nom,
+            prenom=request.client.prenom,
+            telephone=request.client.telephone,
+            date_connexion=date.today(),
+            heure_connexion=datetime.now().time(),
+        )
+        db.add(nouveau_client)
+        db.commit()
+        db.refresh(nouveau_client)
+        client_id = nouveau_client.id
+        nom_client = request.client.nom
+        prenom_client = request.client.prenom
+        telephone_client = request.client.telephone
+        db.close()
+
+    # ── Construction des messages avec historique ──────────────
     messages = [
-        SystemMessage(content="""Tu es un assistant bancaire de CCA Bank.
+        SystemMessage(content=f"""Tu es un assistant bancaire de CCA Bank.
         Détecte la langue du client et réponds OBLIGATOIREMENT dans cette même langue.
         Utilise l'outil chercher_faq pour répondre aux questions des clients.
-        Si le client exprime une plainte ou réclamation, sois empathique et rassure-le."""),
-        HumanMessage(content=request.message),
+        Le client s'appelle {prenom_client} {nom_client}. Utilise son prénom pour personnaliser tes réponses.
+        Si le client exprime une plainte ou réclamation, sois empathique et rassure-le.
+        Tu te souviens du contexte de la conversation et tu peux y faire référence."""),
     ]
 
-    # ── Détecte si c'est une plainte ──────────────────────
+    # Ajouter l'historique
+    for msg in request.historique:
+        if msg.role == "user":
+            messages.append(HumanMessage(content=msg.content))
+        elif msg.role == "assistant":
+            messages.append(AIMessage(content=msg.content))
+
+    # Ajouter le message actuel
+    messages.append(HumanMessage(content=request.message))
+
+    # ── Détection de plainte ───────────────────────────────────
     if est_une_plainte(request.message):
         db = SessionLocal()
         db.add(Ticket(
-            client="Client Web",
+            client_id=client_id,
+            client=f"{prenom_client} {nom_client}".strip(),
             message=request.message,
             statut="ouvert",
         ))
         db.add(Plainte(
+            client_id=client_id,
+            nom_client=nom_client,
+            prenom_client=prenom_client,
+            telephone_client=telephone_client,
             message=request.message,
             categorie="Général",
             statut="nouveau",
@@ -75,15 +129,13 @@ def chat(request: MessageRequest):
 
     return {"reponse": response.content}
 
-# Mots qui indiquent une plainte
+# ── Mots qui indiquent une plainte ────────────────────────────
 mots_plainte = [
-    # Français
     "plainte", "réclamation", "reclamation", "problème", "probleme",
     "pas content", "mécontent", "mecontent", "insatisfait",
     "bug", "erreur", "bloqué", "bloque", "impossible",
     "ça ne marche pas", "ca ne marche pas", "ne fonctionne pas",
     "déçu", "decu", "scandaleux", "inacceptable", "remboursement",
-    # Anglais
     "complaint", "issue", "unhappy", "problem", "not working",
     "disappointed", "unacceptable", "refund", "error", "blocked",
 ]
