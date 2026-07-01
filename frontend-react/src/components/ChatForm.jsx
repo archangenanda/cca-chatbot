@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-const ChatForm = ({ setChatHistory }) => {
+const ChatForm = ({ setChatHistory, chatHistory, clientInfo, setIsTyping }) => {
     const inputRef = useRef();
 
     const handleFormSubmit = async (e) => {
@@ -10,14 +10,25 @@ const ChatForm = ({ setChatHistory }) => {
         inputRef.current.value = "";
 
         setChatHistory(prev => [...prev, { role: "user", text: userMessage }]);
+        setIsTyping(true);
 
-        const response = await fetch("http://localhost:8000/chat", {
+        const historique = chatHistory.map(msg => ({
+            role: msg.role === "user" ? "user" : "assistant",
+            content: msg.text
+        }));
+
+        const response = await fetch("http://172.17.255.57:8000/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: userMessage }),
+            body: JSON.stringify({ 
+                message: userMessage,
+                historique,
+                client: clientInfo
+            }),
         });
 
         const data = await response.json();
+        setIsTyping(false);
         setChatHistory(prev => [...prev, { role: "model", text: data.reponse }]);
     };
 
