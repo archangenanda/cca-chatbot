@@ -8,7 +8,7 @@ import os
 load_dotenv()
 
 # ── Connexion à PostgreSQL ────────────────────────────────────
-DATABASE_URL = "postgresql://postgres:1702@localhost:5432/cca_chatbot"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:1702@localhost:5432/cca_chatbot")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
