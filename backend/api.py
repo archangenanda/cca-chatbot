@@ -13,19 +13,19 @@ load_dotenv()
 
 app = FastAPI(title="Chatbot CCA Bank API")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://archange.3il32026.com",
+        "http://archange.3il32026.com",
         "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
         "http://172.17.255.57:5173",
-        "http://172.17.255.57:5174",
     ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 
 app.include_router(chat_router,     prefix="/chat",     tags=["Chatbot"])
