@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from admin import router as admin_router
 from chat import router as chat_router
 from plaintes import router as plaintes_router
+from database import init_db
+init_db()
 
 load_dotenv()
 
