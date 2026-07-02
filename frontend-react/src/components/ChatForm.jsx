@@ -17,7 +17,7 @@ const ChatForm = ({ setChatHistory, chatHistory, clientInfo, setIsTyping }) => {
             content: msg.text
         }));
 
-        const response = await fetch("http://172.17.255.57:8000/chat", {
+        const response = await fetch("https://cca-chatbot.onrender.com/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
