@@ -10,27 +10,19 @@ from chat import router as chat_router
 from plaintes import router as plaintes_router
 from database import init_db
 
-init_db()
-
 load_dotenv()
 
 app = FastAPI(title="Chatbot CCA Bank API")
 
-from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://archange.3il32026.com",
-        "http://archange.3il32026.com",
-        "http://localhost:5173",
-        "http://172.17.255.57:5173",
-    ],
-    allow_credentials=True,
     allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+init_db()
 
 app.include_router(chat_router,     prefix="/chat",     tags=["Chatbot"])
 app.include_router(admin_router,    prefix="/admin",    tags=["Administration"])
