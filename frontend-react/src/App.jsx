@@ -2,20 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import ChatForm from './components/ChatForm';
 import ChatMessage from './components/ChatMessage';
-import Welcome from './components/Welcome';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 
-// ── Page Chatbot ───────────────────────────────────────────────
 const Chatbot = () => {
-  const [chatHistory, setChatHistory] = useState([]);
-  const [clientInfo, setClientInfo] = useState(null);
+  const [chatHistory, setChatHistory] = useState([
+    { role: "model", text: "Bonjour ! 👋\nComment puis-je vous aider aujourd'hui ?" }
+  ]);
+  const [clientInfo] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const chatBodyRef = useRef(null); // ← ref pour le scroll
-
+  const chatBodyRef = useRef(null);
   const navigate = useNavigate();
 
-  // Scroll automatique vers le bas à chaque nouveau message ou indicateur de frappe
+  useEffect(() => {
+    const setHeight = () => {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    };
+    setHeight();
+    window.addEventListener('resize', setHeight);
+    return () => window.removeEventListener('resize', setHeight);
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (chatBodyRef.current) {
@@ -24,24 +31,6 @@ const Chatbot = () => {
     }, 100);
     return () => clearTimeout(timer);
   }, [chatHistory, isTyping]);
-
-  // Scroll automatique vers le bas à chaque nouveau message ou indicateur de frappe
-  useEffect(() => {
-    if (chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
-    }
-  }, [chatHistory, isTyping]);
-
-  // Une fois le client identifié, affiche le message de bienvenue
-  const handleWelcomeSubmit = (info) => {
-    setClientInfo(info);
-    setChatHistory([
-      { 
-        role: "model", 
-        text: `Bonjour ${info.prenom} ! 👋\nComment puis-je vous aider aujourd'hui ?` 
-      }
-    ]);
-  };
 
   const handleQuickAction = async (text) => {
     setChatHistory(prev => [...prev, { role: "user", text }]);
@@ -52,7 +41,7 @@ const Chatbot = () => {
       content: msg.text
     }));
 
-    const response = await fetch("https://cca-chatbot.onrender.com/chat", {
+    const response = await fetch("https://cca-chatbot.onrender.com/chat/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -70,9 +59,6 @@ const Chatbot = () => {
   return (
     <div className="container">
       <div className="chatbot-popup">
-
-        {/* Formulaire de bienvenue si client non identifié */}
-        {!clientInfo && <Welcome onSubmit={handleWelcomeSubmit} />}
 
         {/* Header */}
         <div className="chatbot-header">
@@ -97,13 +83,11 @@ const Chatbot = () => {
           </button>
         </div>
 
-        {/* Body avec ref pour le scroll */}
+        {/* Body */}
         <div className="chat-body" ref={chatBodyRef}>
           {chatHistory.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}
-
-          {/* Indicateur de frappe */}
           {isTyping && (
             <div className="message bot-message">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -157,7 +141,6 @@ const Chatbot = () => {
   );
 };
 
-// ── App principale avec les routes ────────────────────────────
 const App = () => {
   const navigate = useNavigate();
 
