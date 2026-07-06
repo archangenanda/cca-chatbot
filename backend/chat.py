@@ -14,7 +14,7 @@ model = ChatOpenAI(
     openai_api_key=os.getenv("OPENROUTER_API_KEY"),
     openai_api_base="https://openrouter.ai/api/v1",
     temperature=0.7,
-    max_tokens=3000,
+    max_tokens=4000,
 )
 
 tools = [chercher_faq]
