@@ -9,19 +9,17 @@ import os
 
 router = APIRouter()
 
-# ── Initialisation du modèle ──────────────────────────────────
 model = ChatOpenAI(
     model="openai/gpt-4o-mini",
     openai_api_key=os.getenv("OPENROUTER_API_KEY"),
     openai_api_base="https://openrouter.ai/api/v1",
     temperature=0.7,
-    max_tokens=5000,
+    max_tokens=3000,
 )
 
 tools = [chercher_faq]
 model_with_tools = model.bind_tools(tools)
 
-# ── Modèles de données ────────────────────────────────────────
 class MessageHistorique(BaseModel):
     role: str
     content: str
@@ -34,13 +32,11 @@ class ClientInfo(BaseModel):
 class MessageRequest(BaseModel):
     message: str
     historique: list[MessageHistorique] = []
-    client: ClientInfo | None = None  # infos du client envoyées depuis le frontend
+    client: ClientInfo | None = None
 
-# ── Endpoint chatbot ──────────────────────────────────────────
 @router.post("/")
 def chat(request: MessageRequest):
 
-    # ── Enregistrement du client en base ──────────────────────
     client_id = None
     nom_client = "Client Web"
     prenom_client = ""
@@ -65,6 +61,7 @@ def chat(request: MessageRequest):
         db.close()
 
     # ── Construction des messages avec historique ──────────────
+    messages = [
         SystemMessage(
             content=f"""Tu es un assistant bancaire de CCA Bank.
         Détecte la langue du client et réponds OBLIGATOIREMENT dans cette même langue.
@@ -80,6 +77,7 @@ def chat(request: MessageRequest):
         Si le client exprime une plainte ou réclamation, sois empathique et rassure-le.
         Tu te souviens du contexte de la conversation et tu peux y faire référence."""
         ),
+    ]
 
     # Ajouter l'historique
     for msg in request.historique:
