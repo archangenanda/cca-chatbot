@@ -43,22 +43,25 @@ def chat(request: MessageRequest):
     telephone_client = ""
 
     if request.client:
-        db = SessionLocal()
-        nouveau_client = Client(
-            nom=request.client.nom,
-            prenom=request.client.prenom,
-            telephone=request.client.telephone,
-            date_connexion=date.today(),
-            heure_connexion=datetime.now().time(),
-        )
-        db.add(nouveau_client)
-        db.commit()
-        db.refresh(nouveau_client)
-        client_id = nouveau_client.id
-        nom_client = request.client.nom
-        prenom_client = request.client.prenom
-        telephone_client = request.client.telephone
-        db.close()
+        try:
+            db = SessionLocal()
+            nouveau_client = Client(
+                nom=request.client.nom,
+                prenom=request.client.prenom,
+                telephone=request.client.telephone,
+                date_connexion=date.today(),
+                heure_connexion=datetime.now().time(),
+            )
+            db.add(nouveau_client)
+            db.commit()
+            db.refresh(nouveau_client)
+            client_id = nouveau_client.id
+            nom_client = request.client.nom
+            prenom_client = request.client.prenom
+            telephone_client = request.client.telephone
+            db.close()
+        except Exception as e:
+            print(f"❌ Erreur enregistrement client: {e}")
 
     # ── Construction des messages avec historique ──────────────
     messages = [
@@ -74,7 +77,6 @@ def chat(request: MessageRequest):
         - Ne donne les documents requis QU'APRÈS avoir identifié le type de compte ou de crédit.
         - Pose UNE question à la fois pour guider le client.
         - TOUJOURS utiliser l'outil chercher_faq pour trouver les documents requis, ne jamais inventer les documents.
-        - Demande toujours le nom et prenom du client pour personnaliser les réponses.
         - Si le client exprime une plainte ou réclamation, sois empathique et rassure-le.
         - Tu te souviens du contexte de la conversation et tu peux y faire référence."""
         ),
@@ -92,24 +94,29 @@ def chat(request: MessageRequest):
 
     # ── Détection de plainte ───────────────────────────────────
     if est_une_plainte(request.message):
-        db = SessionLocal()
-        db.add(Ticket(
-            client_id=client_id,
-            client=f"{prenom_client} {nom_client}".strip(),
-            message=request.message,
-            statut="ouvert",
-        ))
-        db.add(Plainte(
-            client_id=client_id,
-            nom_client=nom_client,
-            prenom_client=prenom_client,
-            telephone_client=telephone_client,
-            message=request.message,
-            categorie="Général",
-            statut="nouveau",
-        ))
-        db.commit()
-        db.close()
+        print(f"✅ Plainte détectée : {request.message}")
+        try:
+            db = SessionLocal()
+            db.add(Ticket(
+                client_id=client_id,
+                client=f"{prenom_client} {nom_client}".strip(),
+                message=request.message,
+                statut="ouvert",
+            ))
+            db.add(Plainte(
+                client_id=client_id,
+                nom_client=nom_client,
+                prenom_client=prenom_client,
+                telephone_client=telephone_client,
+                message=request.message,
+                categorie="Général",
+                statut="nouveau",
+            ))
+            db.commit()
+            db.close()
+            print("✅ Plainte et ticket enregistrés avec succès !")
+        except Exception as e:
+            print(f"❌ Erreur enregistrement plainte: {e}")
 
     response = model_with_tools.invoke(messages)
 
@@ -118,10 +125,13 @@ def chat(request: MessageRequest):
         tool_result = chercher_faq.invoke(tool_call["args"])
 
         if tool_result == "Je n'ai pas trouvé d'information sur ce sujet.":
-            db = SessionLocal()
-            db.add(QuestionNR(question=request.message))
-            db.commit()
-            db.close()
+            try:
+                db = SessionLocal()
+                db.add(QuestionNR(question=request.message))
+                db.commit()
+                db.close()
+            except Exception as e:
+                print(f"❌ Erreur enregistrement question NR: {e}")
 
         mots_anglais = ["what","how","where","when","who","open","need","want","can","do","i"]
         langue = "English" if any(m in request.message.lower().split() for m in mots_anglais) else "français"
