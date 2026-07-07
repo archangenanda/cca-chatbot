@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 
+// ── URL de l'API selon l'environnement ─────────────────────
+// En local → localhost:8000, en production → Render
+const API_URL = window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "https://cca-chatbot.onrender.com";
+
 // ── Boutons filtre période ─────────────────────────────────
 const FiltresPeriode = ({ valeur, onChange }) => (
     <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -24,6 +30,7 @@ const FiltresPeriode = ({ valeur, onChange }) => (
 );
 
 const Dashboard = ({ onLogout }) => {
+    // ── États ──────────────────────────────────────────────
     const [faqs, setFaqs]         = useState([]);
     const [tickets, setTickets]   = useState([]);
     const [plaintes, setPlaintes] = useState([]);
@@ -34,50 +41,52 @@ const Dashboard = ({ onLogout }) => {
     const [filtreTicket, setFiltreTicket]   = useState("");
     const [filtrePlainte, setFiltrePlainte] = useState("");
 
+    // ── Token d'authentification stocké dans localStorage ──
     const token = localStorage.getItem("token");
 
-    // ── Charger les FAQ ────────────────────────────────────
+    // ── Charger les FAQ au montage du composant ────────────
     useEffect(() => {
-        fetch("http://localhost:8000/admin/faq", {
+        fetch(`${API_URL}/admin/faq`, {
             headers: { Authorization: `Bearer ${token}` }
         })
         .then(res => res.json())
         .then(data => setFaqs(data));
     }, []);
 
-    // ── Charger les tickets avec filtre ───────────────────
+    // ── Charger les tickets avec filtre de période ─────────
     const fetchTickets = (periode = "") => {
         const url = periode
-            ? `http://localhost:8000/admin/tickets?periode=${periode}`
-            : "http://localhost:8000/admin/tickets";
+            ? `${API_URL}/admin/tickets?periode=${periode}`
+            : `${API_URL}/admin/tickets`;
         fetch(url, { headers: { Authorization: `Bearer ${token}` } })
             .then(res => res.json())
             .then(data => setTickets(data));
     };
 
-    // ── Charger les plaintes avec filtre ──────────────────
+    // ── Charger les plaintes avec filtre de période ────────
     const fetchPlaintes = (periode = "") => {
         const url = periode
-            ? `http://localhost:8000/plaintes/?periode=${periode}`
-            : "http://localhost:8000/plaintes/";
+            ? `${API_URL}/plaintes/?periode=${periode}`
+            : `${API_URL}/plaintes/`;
         fetch(url, { headers: { Authorization: `Bearer ${token}` } })
             .then(res => res.json())
             .then(data => setPlaintes(data));
     };
 
+    // ── Charger tickets et plaintes au montage ─────────────
     useEffect(() => { fetchTickets(); }, []);
     useEffect(() => { fetchPlaintes(); }, []);
 
-    // ── Ouvrir le modal d'une plainte ──────────────────────
+    // ── Ouvrir le modal de gestion d'une plainte ───────────
     const ouvrirPlainte = (p) => {
         setPlainteSelectee(p);
         setReponse(p.reponse_admin || "");
         setNouveauStatut(p.statut);
     };
 
-    // ── Sauvegarder statut / réponse ──────────────────────
+    // ── Sauvegarder le statut et la réponse admin ──────────
     const sauvegarderPlainte = () => {
-        fetch(`http://localhost:8000/plaintes/${plainteSelectee.id}`, {
+        fetch(`${API_URL}/plaintes/${plainteSelectee.id}`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
@@ -86,6 +95,7 @@ const Dashboard = ({ onLogout }) => {
             body: JSON.stringify({ statut: nouveauStatut, reponse_admin: reponse })
         })
         .then(() => {
+            // Mettre à jour la liste localement sans recharger
             setPlaintes(prev => prev.map(p =>
                 p.id === plainteSelectee.id
                     ? { ...p, statut: nouveauStatut, reponse_admin: reponse }
@@ -95,6 +105,7 @@ const Dashboard = ({ onLogout }) => {
         });
     };
 
+    // ── Couleurs des badges de statut ──────────────────────
     const badgeStatut = {
         nouveau:  { background: "#e74c3c", color: "white" },
         en_cours: { background: "#f39c12", color: "white" },
@@ -105,7 +116,7 @@ const Dashboard = ({ onLogout }) => {
     return (
         <div className="dashboard">
 
-            {/* Header */}
+            {/* Header avec logo et bouton déconnexion */}
             <div className="dashboard-header">
                 <div className="cca-logo">
                     <span className="logo-cca">CCA</span>
@@ -118,7 +129,7 @@ const Dashboard = ({ onLogout }) => {
                 </button>
             </div>
 
-            {/* Onglets */}
+            {/* Onglets de navigation */}
             <div className="dashboard-tabs">
                 <button
                     className={onglet === "faq" ? "active" : ""}
@@ -143,7 +154,7 @@ const Dashboard = ({ onLogout }) => {
                 </button>
             </div>
 
-            {/* Contenu */}
+            {/* Contenu selon l'onglet actif */}
             <div className="dashboard-content">
 
                 {/* Onglet FAQ */}
@@ -168,6 +179,7 @@ const Dashboard = ({ onLogout }) => {
                 {onglet === "tickets" && (
                     <div className="tickets-list">
                         <h2>Tickets de réclamation</h2>
+                        {/* Filtre par période */}
                         <FiltresPeriode
                             valeur={filtreTicket}
                             onChange={(p) => { setFiltreTicket(p); fetchTickets(p); }}
@@ -192,6 +204,7 @@ const Dashboard = ({ onLogout }) => {
                 {onglet === "plaintes" && (
                     <div className="tickets-list">
                         <h2>Historique des plaintes</h2>
+                        {/* Filtre par période */}
                         <FiltresPeriode
                             valeur={filtrePlainte}
                             onChange={(p) => { setFiltrePlainte(p); fetchPlaintes(p); }}
@@ -201,6 +214,7 @@ const Dashboard = ({ onLogout }) => {
                         ) : (
                             plaintes.map(p => (
                                 <div key={p.id} className="ticket-item">
+                                    {/* Badge de statut coloré */}
                                     <span style={{
                                         ...badgeStatut[p.statut],
                                         padding: "2px 10px",
@@ -215,6 +229,7 @@ const Dashboard = ({ onLogout }) => {
                                         {p.nom_client || "Anonyme"} —{" "}
                                         {new Date(p.date_soumission).toLocaleDateString("fr-FR")}
                                     </small>
+                                    {/* Bouton pour ouvrir le modal de gestion */}
                                     <button
                                         onClick={() => ouvrirPlainte(p)}
                                         style={{ marginTop: 8, cursor: "pointer" }}
@@ -229,7 +244,7 @@ const Dashboard = ({ onLogout }) => {
 
             </div>
 
-            {/* Modal gestion plainte */}
+            {/* Modal de gestion d'une plainte */}
             {plainteSelectee && (
                 <div style={{
                     position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
@@ -246,6 +261,7 @@ const Dashboard = ({ onLogout }) => {
                         <p><strong>Catégorie :</strong> {plainteSelectee.categorie || "Général"}</p>
                         <p><strong>Message :</strong> {plainteSelectee.message}</p>
                         <hr />
+                        {/* Sélecteur de statut */}
                         <label><strong>Statut :</strong></label>
                         <select
                             value={nouveauStatut}
@@ -257,6 +273,7 @@ const Dashboard = ({ onLogout }) => {
                             <option value="resolu">resolu</option>
                             <option value="ferme">ferme</option>
                         </select>
+                        {/* Zone de réponse admin */}
                         <label><strong>Réponse admin :</strong></label>
                         <textarea
                             value={reponse}
