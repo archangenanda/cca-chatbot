@@ -6,6 +6,7 @@ from database import SessionLocal, QuestionNR, Ticket, Plainte, Client
 from tools import chercher_faq
 from datetime import datetime, date
 import os
+import json
 
 router = APIRouter()
 
@@ -38,7 +39,7 @@ class MessageRequest(BaseModel):
 def chat(request: MessageRequest):
 
     client_id = None
-    nom_client = "Client Web"
+    nom_client = "Client"
     prenom_client = ""
     telephone_client = ""
 
@@ -63,22 +64,53 @@ def chat(request: MessageRequest):
         except Exception as e:
             print(f"❌ Erreur enregistrement client: {e}")
 
+    # ── Vérifier si on est en train de collecter les infos de plainte ──
+    en_cours_plainte = any(
+        "nom complet" in msg.content.lower() or
+        "prénom" in msg.content.lower() or
+        "numéro de téléphone" in msg.content.lower() or
+        "adresse email" in msg.content.lower() or
+        "motif" in msg.content.lower() or
+        "full name" in msg.content.lower() or
+        "phone number" in msg.content.lower()
+        for msg in request.historique
+        if msg.role == "assistant"
+    )
+
+    # ── Vérifier si toutes les infos sont collectées ──────────
+    infos_completes = any(
+        "plainte enregistrée" in msg.content.lower() or
+        "complaint registered" in msg.content.lower()
+        for msg in request.historique
+        if msg.role == "assistant"
+    )
+
     # ── Construction des messages avec historique ──────────────
     messages = [
         SystemMessage(
             content=f"""Tu es un assistant bancaire de CCA Bank.
         Détecte la langue du client et réponds OBLIGATOIREMENT dans cette même langue.
         Utilise l'outil chercher_faq pour répondre aux questions des clients.
-        Le client s'appelle {prenom_client} {nom_client}. Utilise son prénom pour personnaliser tes réponses.
 
         IMPORTANT - Guide conversationnel :
-        - Si le client veut ouvrir un compte, demande-lui D'ABORD quel type de compte il souhaite ouvrir (Compte courant, Compte épargne, Compte entreprise, etc.) avant de donner les documents.
-        - Si le client veut un crédit, demande-lui D'ABORD le type de structure (SARL, SA, GIC, Association, etc.) avant de donner les documents.
+        - Si le client veut ouvrir un compte, demande-lui D'ABORD quel type de compte il souhaite ouvrir avant de donner les documents.
+        - Si le client veut un crédit, demande-lui D'ABORD le type de structure avant de donner les documents.
         - Ne donne les documents requis QU'APRÈS avoir identifié le type de compte ou de crédit.
         - Pose UNE question à la fois pour guider le client.
-        - TOUJOURS utiliser l'outil chercher_faq pour trouver les documents requis, ne jamais inventer les documents.
-        - Si le client exprime une plainte ou réclamation, sois empathique et rassure-le.
-        - Tu te souviens du contexte de la conversation et tu peux y faire référence."""
+        - TOUJOURS utiliser l'outil chercher_faq pour trouver les documents requis.
+
+        IMPORTANT - Gestion des plaintes :
+        - Quand le client exprime une plainte ou réclamation, sois empathique.
+        - Demande-lui de remplir le formulaire suivant UNE INFO À LA FOIS dans cet ordre :
+          1. Nom complet
+          2. Prénom
+          3. Numéro de téléphone
+          4. Adresse email
+          5. Motif détaillé de la plainte
+        - Une fois TOUTES les infos collectées, confirme avec le message EXACT : "Votre plainte a été enregistrée avec succès. Notre équipe vous contactera sous 48h." (ou en anglais si le client parle anglais)
+        - Ne répète pas les questions déjà posées.
+
+        Tu te souviens du contexte de la conversation et tu peux y faire référence."""
         ),
     ]
 
@@ -92,31 +124,55 @@ def chat(request: MessageRequest):
     # Ajouter le message actuel
     messages.append(HumanMessage(content=request.message))
 
-    # ── Détection de plainte ───────────────────────────────────
-    if est_une_plainte(request.message):
-        print(f"✅ Plainte détectée : {request.message}")
-        try:
-            db = SessionLocal()
-            db.add(Ticket(
-                client_id=client_id,
-                client=f"{prenom_client} {nom_client}".strip(),
-                message=request.message,
-                statut="ouvert",
-            ))
-            db.add(Plainte(
-                client_id=client_id,
-                nom_client=nom_client,
-                prenom_client=prenom_client,
-                telephone_client=telephone_client,
-                message=request.message,
-                categorie="Général",
-                statut="nouveau",
-            ))
-            db.commit()
-            db.close()
-            print("✅ Plainte et ticket enregistrés avec succès !")
-        except Exception as e:
-            print(f"❌ Erreur enregistrement plainte: {e}")
+    # ── Détection de plainte et enregistrement ─────────────────
+    if est_une_plainte(request.message) or en_cours_plainte:
+        
+        # Vérifier si toutes les infos sont dans l'historique
+        historique_texte = " ".join([m.content for m in request.historique])
+        
+        # Extraire les infos via le modèle si la conversation est complète
+        if en_cours_plainte and len(request.historique) >= 10:
+            try:
+                # Demander au modèle d'extraire les infos
+                extraction_prompt = f"""
+                Extrait les informations suivantes de cette conversation et retourne UNIQUEMENT un JSON valide :
+                {historique_texte}
+                
+                Format JSON attendu :
+                {{"nom": "...", "prenom": "...", "telephone": "...", "email": "...", "motif": "..."}}
+                
+                Si une info manque, mets "Non fourni".
+                """
+                
+                extraction = model.invoke([HumanMessage(content=extraction_prompt)])
+                
+                try:
+                    infos = json.loads(extraction.content)
+                    
+                    db = SessionLocal()
+                    db.add(Ticket(
+                        client_id=client_id,
+                        client=f"{infos.get('prenom', '')} {infos.get('nom', '')}".strip(),
+                        message=infos.get('motif', request.message),
+                        statut="ouvert",
+                    ))
+                    db.add(Plainte(
+                        client_id=client_id,
+                        nom_client=infos.get('nom', nom_client),
+                        prenom_client=infos.get('prenom', prenom_client),
+                        telephone_client=infos.get('telephone', telephone_client),
+                        message=infos.get('motif', request.message),
+                        categorie="Général",
+                        statut="nouveau",
+                    ))
+                    db.commit()
+                    db.close()
+                    print("✅ Plainte enregistrée avec infos complètes !")
+                except Exception as e:
+                    print(f"❌ Erreur extraction/enregistrement: {e}")
+                    
+            except Exception as e:
+                print(f"❌ Erreur extraction: {e}")
 
     response = model_with_tools.invoke(messages)
 
