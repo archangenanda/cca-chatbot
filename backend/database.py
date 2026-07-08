@@ -69,6 +69,7 @@ class Plainte(Base):
     nom_client       = Column(String(255))
     prenom_client    = Column(String(255))
     telephone_client = Column(String(50))
+    email_client     = Column(String(255))
     categorie        = Column(String(100))
     message          = Column(Text, nullable=False)
     statut           = Column(String(50), default="nouveau")

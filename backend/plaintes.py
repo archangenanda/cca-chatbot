@@ -16,7 +16,7 @@ class PlainteCreate(BaseModel):
     message:          str
 
 class PlainteUpdate(BaseModel):
-    statut:        Optional[str] = None  # nouveau | en_cours | resolu | ferme
+    statut:        Optional[str] = None
     reponse_admin: Optional[str] = None
 
 # ── Soumettre une plainte (depuis le chatbot) ─────────────────
@@ -37,9 +37,19 @@ def creer_plainte(data: PlainteCreate):
     db.close()
     return {"message": "Plainte enregistrée avec succès", "id": plainte.id}
 
+# ── Debug — compter les plaintes ──────────────────────────────
+# IMPORTANT : ce endpoint doit être AVANT /{plainte_id}
+@router.get("/all/count")
+def debug_plaintes():
+    db = SessionLocal()
+    plaintes = db.query(Plainte).all()
+    count = len(plaintes)
+    db.close()
+    return {"total": count}
+
 # ── Lister les plaintes avec filtre période ───────────────────
 @router.get("/")
-def lister_plaintes(periode: str = Query(None)):  # jour | semaine | mois
+def lister_plaintes(periode: str = Query(None)):
     db = SessionLocal()
     query = db.query(Plainte)
 
