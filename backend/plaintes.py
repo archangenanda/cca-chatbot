@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timedelta
 from database import SessionLocal, Plainte
+from email_service import envoyer_email_client
 
 router = APIRouter()
 
@@ -38,7 +39,6 @@ def creer_plainte(data: PlainteCreate):
     return {"message": "Plainte enregistrée avec succès", "id": plainte.id}
 
 # ── Debug — compter les plaintes ──────────────────────────────
-# IMPORTANT : ce endpoint doit être AVANT /{plainte_id}
 @router.get("/all/count")
 def debug_plaintes():
     db = SessionLocal()
@@ -77,7 +77,7 @@ def get_plainte(plainte_id: int):
         raise HTTPException(status_code=404, detail="Plainte introuvable")
     return plainte
 
-# ── Mettre à jour statut / réponse admin ─────────────────────
+# ── Mettre à jour statut / réponse admin et envoyer email ─────
 @router.put("/{plainte_id}")
 def mettre_a_jour_plainte(plainte_id: int, data: PlainteUpdate):
     db = SessionLocal()
@@ -93,5 +93,15 @@ def mettre_a_jour_plainte(plainte_id: int, data: PlainteUpdate):
     plainte.date_mise_a_jour = datetime.now()
 
     db.commit()
+
+    # Envoyer email si réponse admin et email client disponible
+    if data.reponse_admin and plainte.email_client:
+        envoyer_email_client(
+            email_client=plainte.email_client,
+            nom_client=plainte.nom_client or "Client",
+            message_admin=data.reponse_admin,
+            motif_plainte=plainte.message
+        )
+
     db.close()
     return {"message": "Plainte mise à jour"}
