@@ -12,7 +12,7 @@ def envoyer_email_client(email_client: str, nom_client: str, message_admin: str,
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
         print("❌ Variables EMAIL non configurées")
         return False
-    
+     
     try:
         # Créer le message
         msg = MIMEMultipart("alternative")
