@@ -3,6 +3,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from docx import Document
 from database import SessionLocal, FAQ
+from database import engine
+print("🔗 Connecté à :", engine.url)
 
 def importer_dataset():
     # ── Ouvrir le fichier Word ─────────────────────────────
