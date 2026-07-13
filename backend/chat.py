@@ -29,6 +29,7 @@ class ClientInfo(BaseModel):
     nom: str
     prenom: str
     telephone: str
+    email: str 
 
 class MessageRequest(BaseModel):
     message: str
@@ -42,6 +43,7 @@ def chat(request: MessageRequest):
     nom_client = "Client"
     prenom_client = ""
     telephone_client = ""
+    email_client = ""
 
     if request.client:
         try:
@@ -50,6 +52,7 @@ def chat(request: MessageRequest):
                 nom=request.client.nom,
                 prenom=request.client.prenom,
                 telephone=request.client.telephone,
+                email=request.client.email,
                 date_connexion=date.today(),
                 heure_connexion=datetime.now().time(),
             )
@@ -224,3 +227,10 @@ mots_plainte = [
 def est_une_plainte(message: str) -> bool:
     message_lower = message.lower()
     return any(mot in message_lower for mot in mots_plainte)
+
+db = SessionLocal()
+try:
+    ...
+    db.commit()
+finally:
+    db.close()
