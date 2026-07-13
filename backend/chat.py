@@ -145,9 +145,16 @@ def chat(request: MessageRequest):
                 """
                 
                 extraction = model.invoke([HumanMessage(content=extraction_prompt)])
-                
+
                 try:
-                    infos = json.loads(extraction.content)
+                    contenu_nettoye = extraction.content.strip()
+                    if contenu_nettoye.startswith("```"):
+                        contenu_nettoye = contenu_nettoye.strip("`")
+                        if contenu_nettoye.startswith("json"):
+                            contenu_nettoye = contenu_nettoye[4:]
+                        contenu_nettoye = contenu_nettoye.strip()
+
+                    infos = json.loads(contenu_nettoye)
                     
                     db = SessionLocal()
                     db.add(Ticket(
