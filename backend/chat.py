@@ -60,6 +60,7 @@ def chat(request: MessageRequest):
             nom_client = request.client.nom
             prenom_client = request.client.prenom
             telephone_client = request.client.telephone
+            email_client = request.client.email if hasattr(request.client, 'email') else None
             db.close()
         except Exception as e:
             print(f"❌ Erreur enregistrement client: {e}")
@@ -171,6 +172,7 @@ def chat(request: MessageRequest):
                         message=infos.get('motif', request.message),
                         categorie="Général",
                         statut="nouveau",
+                        email_client=infos.get('email', email_client),
                     ))
                     db.commit()
                     db.close()
