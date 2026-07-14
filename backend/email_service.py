@@ -1,26 +1,25 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
+import resend
 
 def envoyer_email_client(email_client: str, nom_client: str, message_admin: str, motif_plainte: str):
-    """Envoie un email au client quand l'admin répond à sa plainte"""
-    
-    EMAIL_SENDER = os.getenv("EMAIL_SENDER")
-    EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-    
-    if not EMAIL_SENDER or not EMAIL_PASSWORD:
-        print("❌ Variables EMAIL non configurées")
+    """Envoie un email au client quand l'admin répond à sa plainte, via l'API Resend (HTTP, pas de SMTP)."""
+
+    RESEND_API_KEY = os.getenv("re_LciUCSb3_FN9T89ZW3CfWqD7yq8f4MGUA")
+    EMAIL_SENDER = os.getenv("archangenanda@gmail.com")  # doit être une adresse d'un domaine vérifié sur Resend,
+                                              
+
+    if not RESEND_API_KEY:
+        print("❌ Variable RESEND_API_KEY non configurée")
         return False
-     
+
+    if not EMAIL_SENDER:
+        print("❌ Variable EMAIL_SENDER non configurée")
+        return False
+
+    resend.api_key = RESEND_API_KEY
+
     try:
-        # Créer le message
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = "Réponse à votre plainte - CCA Bank"
-        msg["From"] = EMAIL_SENDER
-        msg["To"] = email_client
-        
-        # Corps de l'email en HTML
+        # Corps de l'email en HTML (identique à avant)
         html = f"""
         <html>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -44,17 +43,18 @@ def envoyer_email_client(email_client: str, nom_client: str, message_admin: str,
         </body>
         </html>
         """
-        
-        msg.attach(MIMEText(html, "html"))
-        
-        # Envoyer via Gmail SMTP
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_SENDER, email_client, msg.as_string())
-        
-        print(f"✅ Email envoyé à {email_client}")
+
+        params = {
+            "from": EMAIL_SENDER,
+            "to": [email_client],
+            "subject": "Réponse à votre plainte - CCA Bank",
+            "html": html,
+        }
+
+        email_response = resend.Emails.send(params)
+        print(f"✅ Email envoyé à {email_client} (id: {email_response.get('id')})")
         return True
-        
+
     except Exception as e:
         print(f"❌ Erreur envoi email: {e}")
         return False
