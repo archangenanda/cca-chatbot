@@ -227,10 +227,3 @@ mots_plainte = [
 def est_une_plainte(message: str) -> bool:
     message_lower = message.lower()
     return any(mot in message_lower for mot in mots_plainte)
-
-db = SessionLocal()
-try:
-    ...
-    db.commit()
-finally:
-    db.close()
