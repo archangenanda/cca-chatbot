@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime, date, time
 from dotenv import load_dotenv
+from contextlib import contextmanager
 import os
 
 load_dotenv(override=False)
@@ -87,3 +88,12 @@ def init_db():
 if __name__ == "__main__":
     init_db()
     print("✅ Base de données initialisée !")
+
+
+@contextmanager
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

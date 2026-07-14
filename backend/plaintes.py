@@ -80,19 +80,28 @@ def get_plainte(plainte_id: int):
 # ── Mettre à jour statut / réponse admin et envoyer email ─────
 @router.put("/{plainte_id}")
 def mettre_a_jour_plainte(plainte_id: int, data: PlainteUpdate):
-    db = SessionLocal()
-    plainte = db.query(Plainte).filter(Plainte.id == plainte_id).first()
-    if not plainte:
-        db.close()
-        raise HTTPException(status_code=404, detail="Plainte introuvable")
+    with get_db() as db:
+        plainte = db.query(Plainte).filter(Plainte.id == plainte_id).first()
+        if not plainte:
+            raise HTTPException(status_code=404, detail="Plainte introuvable")
 
-    if data.statut:
-        plainte.statut = data.statut
-    if data.reponse_admin is not None:
-        plainte.reponse_admin = data.reponse_admin
-    plainte.date_mise_a_jour = datetime.now()
+        if data.statut:
+            plainte.statut = data.statut
+        if data.reponse_admin is not None:
+            plainte.reponse_admin = data.reponse_admin
+        plainte.date_mise_a_jour = datetime.now()
 
-    db.commit()
+        db.commit()
+
+        if data.reponse_admin and plainte.email_client:
+            envoyer_email_client(
+                email_client=plainte.email_client,
+                nom_client=plainte.nom_client or "Client",
+                message_admin=data.reponse_admin,
+                motif_plainte=plainte.message
+            )
+
+    return {"message": "Plainte mise à jour"}
 
     # Envoyer email si réponse admin et email client disponible
     if data.reponse_admin and plainte.email_client:
