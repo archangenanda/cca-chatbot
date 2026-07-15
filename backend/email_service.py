@@ -4,8 +4,8 @@ import resend
 def envoyer_email_client(email_client: str, nom_client: str, message_admin: str, motif_plainte: str):
     """Envoie un email au client quand l'admin répond à sa plainte, via l'API Resend (HTTP, pas de SMTP)."""
 
-    RESEND_API_KEY = os.getenv("re_LciUCSb3_FN9T89ZW3CfWqD7yq8f4MGUA")
-    EMAIL_SENDER = os.getenv("archangenanda@gmail.com")  # doit être une adresse d'un domaine vérifié sur Resend,
+    RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+    EMAIL_SENDER = os.getenv("EMAIL_SENDER")  # doit être une adresse d'un domaine vérifié sur Resend,
                                               
 
     if not RESEND_API_KEY:
