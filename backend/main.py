@@ -1,35 +1,36 @@
-from flask import app
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.tools import tool
-from tools import chercher_faq
+from chat import router as chat_router
 from plaintes import router as plaintes_router
 import os
 
-
-app.include_router(plaintes_router, prefix="/plaintes")
 # ── Chargement des variables d'environnement ──────────────────
 load_dotenv()
 
-# ── Initialisation du modèle via OpenRouter ───────────────────
-model = ChatOpenAI(
-    model="openai/gpt-4o-mini",
-    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
-    openai_api_base="https://openrouter.ai/api/v1",
-    temperature=0.7,
-    max_tokens=1000,
+# ── Création de l'application FastAPI ─────────────────────────
+app = FastAPI(title="CCA Bank Chatbot API")
+
+# ── Configuration CORS ─────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://archange.3il32026.com",
+        "http://localhost:5173",  # dev local (Vite)
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# ── Connecte les outils au modèle ─────────────────────────────
-tools = [chercher_faq]
-model_with_tools = model.bind_tools(tools)
+# ── Inclusion des routers ──────────────────────────────────────
+# chat.py définit @router.post("/") -> combiné au prefix "/chat" ça donne POST /chat/
+app.include_router(chat_router, prefix="/chat")
+app.include_router(plaintes_router, prefix="/plaintes")
 
-# ── Test ──────────────────────────────────────────────────────
-response = model_with_tools.invoke([
-    SystemMessage(content="Tu es un assistant bancaire de CCA Bank. Réponds toujours en français. Utilise toujours l'outil chercher_faq pour répondre aux questions."),
-    HumanMessage(content="Quels documents pour ouvrir un compte courant ?"),
-])
 
-print(response.content)
+# ── Route racine (health check) ────────────────────────────────
+@app.get("/")
+async def root():
+    return {"status": "ok", "service": "CCA Bank Chatbot API"}
