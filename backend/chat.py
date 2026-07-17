@@ -70,12 +70,12 @@ def chat(request: MessageRequest):
 
     # ── Vérifier si on est en train de collecter les infos de plainte ──
     en_cours_plainte = any(
-        "nom complet" in msg.content.lower() or
+        "nom " in msg.content.lower() or
         "prénom" in msg.content.lower() or
         "numéro de téléphone" in msg.content.lower() or
         "adresse email" in msg.content.lower() or
         "motif" in msg.content.lower() or
-        "full name" in msg.content.lower() or
+        "name" in msg.content.lower() or
         "phone number" in msg.content.lower()
         for msg in request.historique
         if msg.role == "assistant"
@@ -102,11 +102,12 @@ def chat(request: MessageRequest):
         - Ne donne les documents requis QU'APRÈS avoir identifié le type de compte ou de crédit.
         - Pose UNE question à la fois pour guider le client.
         - TOUJOURS utiliser l'outil chercher_faq pour trouver les documents requis.
+        - Si le client veut parler à un conseiller ou meme prendre un rendez-vous, demande-lui d'abord de remplir le formulaire de plainte pour que l'équipe puisse le recontacter.
 
-        IMPORTANT - Gestion des plaintes :
+        IMPORTANT - Gestion des plaintes :  
         - Quand le client exprime une plainte ou réclamation, sois empathique.
         - Demande-lui de remplir le formulaire suivant UNE INFO À LA FOIS dans cet ordre :
-          1. Nom complet
+          1. Nom 
           2. Prénom
           3. Numéro de téléphone
           4. Adresse email
