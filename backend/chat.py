@@ -189,23 +189,29 @@ def chat(request: MessageRequest):
     response = model_with_tools.invoke(messages)
 
     if response.tool_calls:
-        tool_call   = response.tool_calls[0]
-        tool_result = chercher_faq.invoke(tool_call["args"])
-
-        if tool_result == "Je n'ai pas trouvé d'information sur ce sujet.":
-            try:
-                db = SessionLocal()
-                db.add(QuestionNR(question=request.message))
-                db.commit()
-                db.close()
-            except Exception as e:
-                print(f"❌ Erreur enregistrement question NR: {e}")
-
+        # ── Détection de la langue (une seule fois) ─────────────
         mots_anglais = ["what","how","where","when","who","open","need","want","can","do","i"]
         langue = "English" if any(m in request.message.lower().split() for m in mots_anglais) else "français"
 
+        # ── IMPORTANT : traiter TOUS les tool_calls, pas seulement le premier.
+        # OpenAI/OpenRouter exige qu'un message assistant avec des tool_calls
+        # soit suivi d'un ToolMessage pour CHAQUE tool_call_id, sinon 400 Bad Request.
         messages.append(response)
-        messages.append(ToolMessage(content=tool_result, tool_call_id=tool_call["id"]))
+
+        for tool_call in response.tool_calls:
+            tool_result = chercher_faq.invoke(tool_call["args"])
+
+            if tool_result == "Je n'ai pas trouvé d'information sur ce sujet.":
+                try:
+                    db = SessionLocal()
+                    db.add(QuestionNR(question=request.message))
+                    db.commit()
+                    db.close()
+                except Exception as e:
+                    print(f"❌ Erreur enregistrement question NR: {e}")
+
+            messages.append(ToolMessage(content=tool_result, tool_call_id=tool_call["id"]))
+
         messages.append(HumanMessage(content=f"Using the information above, answer the client in {langue}."))
 
         final_response = model_with_tools.invoke(messages)
